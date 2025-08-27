@@ -114,7 +114,7 @@ int main() {
 		glClear(GL_COLOR_BUFFER_BIT);
 		glfwSwapBuffers(window);
 	}
-	//aleatorio
+	
 	glfwDestroyWindow(window);
 	glfwTerminate();
 	return 0;
