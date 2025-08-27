@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <gl\glew.h>
 #include <GLFW/glfw3.h>
+#include <random>
 const GLint WIDTH = 800, HEIGHT = 600;     //LARGURA E ALTURA GLOBAL
 GLuint VAO, VBO, shaderProgram;
 //VAO é tipo um array sendo o triangulo,VBO é tipo um vertice dele uma propriedade do VAO
@@ -18,10 +19,10 @@ void main() {                                 \n\
 static const char* fragmentShader = "              \n\
 #version 330                                       \n\
                                                    \n\
-uniform in vec3 triColor;                          \n\
-                                                   \n\
+uniform vec3 triColor;                             \n\
+out vec4 color;                                    \n\
 void main() {                                      \n\
-   color = vec3(triColor,1.0);                     \n\
+   color = vec4(triColor,1.0);                     \n\
 }                                                  \n\
 ";
 
@@ -75,8 +76,15 @@ void adicionaPrograma() {
 	glLinkProgram(shaderProgram);
 }
 
-
+GLfloat random_float() {
+	std::random_device dev;
+	std::mt19937 rng(dev());
+	std::uniform_real_distribution<> distr(0.0, 1.0);
+	GLfloat random_float = distr(rng);
+	return random_float;
+}
 int main() {
+	
 	//iniciar o GLFW
 	if (!glfwInit()) {
 		printf("GLFW Nao foi iniciado");
@@ -108,10 +116,37 @@ int main() {
 	}
 
 	glViewport(0, 0, bufferWidth, bufferHeight);
+
+	criaTriangulo();
+	adicionaPrograma();
+
 	while (!glfwWindowShouldClose(window)) {
-		glClearColor(1.0f, 1.0f,0.0f,1.0f);
+
+		//GLfloat red = random_float();
+	    //GLfloat green = random_float();
+		//GLfloat blue = random_float();
+		//aleatorio
+
+		//cor de fundo da janela
+		glClearColor(0.0f, 0.0f,0.0f,1.0f);
 		glfwPollEvents();
 		glClear(GL_COLOR_BUFFER_BIT);
+
+		//altera cor do triangulo
+		GLint uniformColor = glGetUniformLocation(shaderProgram, "triColor");
+		glUniform3f(uniformColor, 0.0, 1.0, 0.5);
+		//glUniform3f(uniformColor, red, green, blue);
+
+		//desenhando o triangulo
+		glUseProgram(shaderProgram);
+
+		glBindVertexArray(VAO);
+
+			glDrawArrays(GL_TRIANGLES,0, 3 );//triangulo, começando na posicao 0 ,numero de pontos 3
+			glBindVertexArray(0);
+
+
+
 		glfwSwapBuffers(window);
 	}
 	
