@@ -7,7 +7,7 @@
 #include <glm/gtc/type_ptr.hpp>
 
 const GLint WIDTH = 800, HEIGHT = 600;     //LARGURA E ALTURA GLOBAL
-GLuint VAO, VBO, shaderProgram;
+GLuint VAO, VBO, shaderProgram,IBO;
 
 float toRadians = 3.1415 / 180;
 
@@ -24,41 +24,55 @@ float triCurrentAngle = 0.0f,triAngleIncrement = 1.0f;
 static const char* vertexShader = "                         \n\
 #version 330                                                \n\
                                                             \n\
-layout(location=0) in vec2 pos;                             \n\
+layout(location=0) in vec3 pos;                             \n\
 uniform mat4 model;                                         \n\
-                                                            \n\
+uniform mat4 projection;                                    \n\
+out vec4 vCol;                                              \n\
 								                            \n\
 void main() {										        \n\
-   gl_Position = model * vec4(pos.x , pos.y , 0.0,1.0);     \n\
+   gl_Position = projection * model * vec4(pos,1.0);        \n\
+   vCol = vec4(clamp(pos,0.0f,1.0f),1.0f);				    \n\
 }                                                           \n\
 ";
 //programa em glsl que fragmenta
 static const char* fragmentShader = "              \n\
 #version 330                                       \n\
-                                                   \n\
+in vec4 vCol;                                      \n\
 uniform vec3 triColor;                             \n\
 out vec4 color;                                    \n\
 void main() {                                      \n\
-   color = vec4(triColor,1.0);                     \n\
+   color = vCol;                                   \n\
 }                                                  \n\
 ";
 
 
 void criaTriangulo() {
+	unsigned int indices[] = {//IBO
+		0,1,2,//base
+		0,1,3,//esquerda
+		0,2,3,// direita
+		1,2,3 // Frente
+	};
+
 	GLfloat vertices[] = {
-		0.0f,1.0f, //vertice 1
-		-1.0f,-1.0f,//vertice 2
-		1.0f,-1.0f //vertice 3
+		0.0f,1.0f,0.f, //vertice 1
+		-1.0f,-1.0f,0.0f,//vertice 2
+		1.0f,-1.0f,0.0f,//vertice 3
+		0.0f,0.0f,1.0f//vertice 4
 	};
 
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
-	  
+
+	 glGenBuffers(1, &IBO);
+	  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+	  glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
 	 glGenBuffers(1, &VBO);
 	 glBindBuffer(GL_ARRAY_BUFFER, VBO);
 
 	   glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices,GL_STATIC_DRAW);
-	   glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
+	   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	   glEnableVertexAttribArray(0); //location
 
 	 glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -137,6 +151,8 @@ int main() {
 	criaTriangulo();
 	adicionaPrograma();
 
+	glm::mat4 projection = glm::perspective(45.0f, (GLfloat)bufferWidth / (GLfloat)bufferHeight,0.1f,100.f );
+
 	while (!glfwWindowShouldClose(window)) {
 
 		//GLfloat red = random_float();
@@ -145,7 +161,7 @@ int main() {
 		//aleatorio
 
 		//cor de fundo da janela
-		glClearColor(0.0f, 0.0f,0.0f,1.0f);
+		glClearColor(0.5f, 0.5f,0.5f,1.0f);
 		glfwPollEvents();
 		glClear(GL_COLOR_BUFFER_BIT);
 
@@ -180,19 +196,29 @@ int main() {
 		}
 
 		GLint uniformModel = glGetUniformLocation(shaderProgram, "model");
+		GLint uniformProjection = glGetUniformLocation(shaderProgram, "projection");
 		glm::mat4 model(1.0f);
-		model = glm::translate(model, glm::vec3(triOffset, triOffset, 0.0f));//x y z
-		model = glm::scale(model, glm::vec3(triOffsetSize, triOffsetSize, 0.0f));//x y z
-		model = glm::rotate(model, triCurrentAngle * toRadians , glm::vec3(1.0f, 1.0f, 0.0f));//x y z
+
+		model = glm::translate(model, glm::vec3(triOffset, triOffset, -2.5f));//x y z
+		model = glm::scale(model, glm::vec3(0.4f,0.4f, 0.4f));//x y z
+		model = glm::rotate(model, triCurrentAngle * toRadians , glm::vec3(0.0f, 1.0f, 1.0f));//x y z
 		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+		glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projection));
 
 		//desenhando o triangulo
 		glUseProgram(shaderProgram);
-
 		glBindVertexArray(VAO);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+		  glDrawElements(GL_TRIANGLES, 12,GL_UNSIGNED_INT,0);
 
-			glDrawArrays(GL_TRIANGLES,0, 3 );//triangulo, começando na posicao 0 ,numero de pontos 3
-			glBindVertexArray(0);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+		glBindVertexArray(0);
+
+
+		//glBindVertexArray(VAO);
+
+			//glDrawArrays(GL_TRIANGLES,0, 3 );//triangulo, começando na posicao 0 ,numero de pontos 3
+			//glBindVertexArray(0);
 
 
 
