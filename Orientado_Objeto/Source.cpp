@@ -92,6 +92,10 @@ int main() {
     // 0.0f));
     glUniformMatrix4fv(shaderList[0].GetModelLocation(), 1, GL_FALSE,
                        glm::value_ptr(model));
+
+    //
+
+
     meshList[0]->RenderMesh();
 
     glUseProgram(0); // Removo o Programa da memória
