@@ -1,109 +1,135 @@
+#define STB_IMAGE_IMPLEMENTATION
+
 #include <stdio.h>
 #include <vector>
 
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
+#include <GL\glew.h>
+#include <GLFW\glfw3.h>
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include <glm\glm.hpp>
+#include <glm\gtc\matrix_transform.hpp>
+#include <glm\gtc\type_ptr.hpp>
 
 #include "Mesh.h"
 #include "Shader.h"
 #include "Window.h"
+#include "Camera.h"
+#include "texture.h"
 
-std::vector<Mesh *> meshList;
+std::vector<Mesh*> meshList;
 std::vector<Shader> shaderList;
+Window mainWindow;
+Camera camera;
 
-static const char *fShader = "./shaders/fragment_shader.glsl";
-static const char *vShader = "./shaders/vertex_shader.glsl";
+Texture brickTexture;
+Texture dirtTexture;
 
-void CreateObjects() {
-  unsigned int indices[] = {
-      0, 1, 2, // Frente
-      0, 1, 3, // Lateral Direita
-      0, 2, 3, // Lateral Esquerda
-      3, 1, 2  // Base
-  };
+//Old version of FPS
+GLfloat deltaTime = 0.0f, lastime = 0.0f;
 
-  GLfloat vertices[] = {
-      0.0f,  1.0f,  0.0f, // Vertice 0 (x,y,z)
-      1.0f,  -1.0f, 0.0f, // Vertice 1 (x,y,z)
-      -1.0f, -1.0f, 0.0f, // Vertice 2 (x,y,z)
-      0.0f,  -1.0f, 1.0f  // Vertice 3 (x,y,z)
-  };
+static const char* vertexLocation = "./Shaders/VertexShader.glsl";
+static const char* fragmentLocation = "./Shaders/FragmentShader.glsl";
 
-  Mesh *obj1 = new Mesh();
-  obj1->CreateMesh(vertices, indices, sizeof(vertices), sizeof(indices));
-  meshList.push_back(obj1);
+void CreateTriangle() {
+	GLfloat vertices[] = {
+		0.0f, 1.0f, 0.0f,	0.5f, 1.0f,  //Vértice 0 (x,y,z, u,v)
+		1.0f, -1.0f, 0.0f,	1.0f, 0.0f,  //Vértice 1 (x,y,z, u,v)
+		-1.0f, -1.0f, 0.0f, 0.0f, 0.0f,  //Vértice 2 (x,y,z, u,v)
+		0.0f, -1.0f, 1.0f,	0.5f, 0.0f   //Vértice 3 (x,y,z, u,v)
+	};
+
+	unsigned int indices[] = {
+		0,1,2, //Frente da pirâmide
+		0,1,3, //Parede lateral direita
+		0,2,3, //Parede lateral esquerda
+		1,2,3  //Base da pirâmide
+	};
+
+	Mesh* obj1 = new Mesh();
+	obj1->CreateMesh(vertices, indices, sizeof(vertices), sizeof(indices));
+	meshList.push_back(obj1);
+
+	Mesh* obj2 = new Mesh();
+	obj2->CreateMesh(vertices, indices, sizeof(vertices), sizeof(indices));
+	meshList.push_back(obj2);
 }
 
-void CreateShaders() {
-  Shader *shader1 = new Shader();
-  shader1->CreateFromFiles(vShader, fShader);
-  shaderList.push_back(*shader1);
+void CreateShader() {
+	Shader* shader1 = new Shader();
+	shader1->CreateFromFile(vertexLocation, fragmentLocation);
+	shaderList.push_back(*shader1);
 }
 
 int main() {
-  // Cria a window
-  Window mainWindow(800, 600);
-  if (mainWindow.initialize() != 0) {
-    printf("Falha ao inicializar a janela!\n");
-    return 1;
-  }
+	mainWindow = Window(800, 600);
+	mainWindow.initialize();
 
-  // Criar o Triangulo
-  CreateObjects();
-  CreateShaders();
+	//Criar o Triangulo
+	CreateTriangle(); //Coloca os dados na memória da placa de vídeo
+	CreateShader(); //Cria os Shaders
 
-  glm::mat4 projection = glm::perspective(
-      45.0f, mainWindow.getBufferWidth() / mainWindow.getBufferHeight(), 0.1f,
-      100.0f);
+	camera = Camera(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, 0.0f, 5.0f, 8.0f);
 
-  while (!mainWindow.getShouldClose()) {
-    // Ativa inputs e eventos da window
-    glfwPollEvents();
+	//Carrega as Textures
+	brickTexture = Texture((char*)("Textures/brick.png"));
+	brickTexture.loadTexture();
+	dirtTexture = Texture((char*)("Textures/dirt.png"));
+	dirtTexture.loadTexture();
 
-    /********************************
-     * Cor de fundo da tela
-     *********************************/
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glm::mat4 projection = glm::perspective(1.0f, mainWindow.getBufferWidth() / mainWindow.getBufferHeight(), 0.1f, 100.0f);
 
-    /********************************
-     * Piramide
-     *********************************/
-    shaderList[0].UseShader(); // Usar o programa
+	while (!mainWindow.getWindowShouldClose()) {
+		//Old version of FPS
+		GLfloat now = glfwGetTime();
+		deltaTime = now - lastime;
+		lastime = now;
 
-    // Movimenta??o da proje??o da camera
-    glUniformMatrix4fv(shaderList[0].GetProjectionLocation(), 1, GL_FALSE,
-                       glm::value_ptr(projection));
+		//Ativa inputs e eventos
+		glfwPollEvents();
 
-    // Piramide 1
-    glm::mat4 model(1.0f); // cria uma matriz 4x4 e coloca os valores 1.0f em
-                           // todas as posições
-    model = glm::translate(
-        model,
-        glm::vec3(
-            0.0, 0.0f,
-            -2.5f)); // traduz o modelo para movimentar a posição (x, y, z)
-    model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));
-    // model = glm::rotate(model, glm::radians(angle), glm::vec3(0.0f, 1.0f,
-    // 0.0f));
-    glUniformMatrix4fv(shaderList[0].GetModelLocation(), 1, GL_FALSE,
-                       glm::value_ptr(model));
+		//Controle do teclado
+		camera.keyControl(mainWindow.getKeys(), deltaTime);
+		camera.mouseControl(mainWindow.getXChange(), mainWindow.getYChange(), deltaTime);
 
-    //
+		/********************************
+		* Cor de fundo da tela
+		*********************************/
+		glClearColor(1.0f, 1.0f, 1.0f, 1.0f);//Limpa a janela, cor
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+		/********************************
+		* Piramides
+		*********************************/
+		shaderList[0].UseProgram(); //Usar o programa
+		glUniformMatrix4fv(shaderList[0].getUniformProjection(), 1, GL_FALSE, glm::value_ptr(projection)); //Movimentação da projeção da camera
+		glUniformMatrix4fv(shaderList[0].getUniformView(), 1, GL_FALSE, glm::value_ptr(camera.calculateViewMatrix()));
 
-    meshList[0]->RenderMesh();
+		/********************************
+		* Piramide 1
+		*********************************/
+		glm::mat4 model(1.0f); //cria uma matriz 4x4 e coloca os valores 1.0f em todas as posições
+		model = glm::translate(model, glm::vec3(0.0f, -0.25f, -2.5f)); //traduz o modelo para movimentar a posição (x,y,z)
+		model = glm::scale(model, glm::vec3(0.4f, 0.4f, 0.4f));
+		//model = glm::rotate(model, glm::radians(angle), glm::vec3(0.0f, 1.0f, 0.0f));
+		glUniformMatrix4fv(shaderList[0].getUniformModel(), 1, GL_FALSE, glm::value_ptr(model));
+		brickTexture.useTexture();
+		meshList[0]->RenderMesh();
 
-    glUseProgram(0); // Removo o Programa da memória
+		/********************************
+		* Piramide 2
+		*********************************/
+		model = glm::mat4(1.0f); //cria uma matriz 4x4 colocando 1.0f em cada uma das posições
+		model = glm::translate(model, glm::vec3(0.0f, 0.75f, -2.5f)); //traduz o modelo para movimentar a posição (x,y,z)
+		model = glm::scale(model, glm::vec3(0.4f, 0.4f, 0.4f));
+		glUniformMatrix4fv(shaderList[0].getUniformModel(), 1, GL_FALSE, glm::value_ptr(model));
+		dirtTexture.useTexture();
+		meshList[1]->RenderMesh();
 
-    mainWindow.swapBuffers();
-  }
+		glUseProgram(0); //Removo o Programa da memória
 
-  // Deleta os objetos criados
-  mainWindow.terminate();
-  return 0;
+		//Atualiza a tela
+		mainWindow.swapBuffers();
+	}
+
+	return 0;
 }
