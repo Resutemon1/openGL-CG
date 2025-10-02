@@ -44,6 +44,17 @@ void CreateTriangle() {
 		0,2,3, //Parede lateral esquerda
 		1,2,3  //Base da pirâmide
 	};
+	GLfloat verticeschao[] = {
+		10.0f, 10.0f, 0.0f,	1.0f, 1.0f,  //Vértice 0 (x,y,z, u,v)
+		-10.0f, 10.0f, 0.0f,	0.0f, 1.0f,  //Vértice 1 (x,y,z, u,v)
+		-10.0f, -10.0f, 0.0f, 0.0f, 0.0f,  //Vértice 2 (x,y,z, u,v)
+		10.0f, -10.0f, 0.0f,	1.0f, 0.0f   //Vértice 3 (x,y,z, u,v)
+	};
+
+	unsigned int indiceschao[] = {
+		0,1,2, //Frente da pirâmide
+		0,3,2  //Base da pirâmide
+	};
 
 	Mesh* obj1 = new Mesh();
 	obj1->CreateMesh(vertices, indices, sizeof(vertices), sizeof(indices));
@@ -52,6 +63,15 @@ void CreateTriangle() {
 	Mesh* obj2 = new Mesh();
 	obj2->CreateMesh(vertices, indices, sizeof(vertices), sizeof(indices));
 	meshList.push_back(obj2);
+
+	Mesh* obj3 = new Mesh();
+	obj3->CreateMesh(verticeschao, indiceschao, sizeof(verticeschao), sizeof(indiceschao));
+	meshList.push_back(obj3);
+
+	Mesh* obj4 = new Mesh();
+	obj4->CreateMesh(verticeschao, indiceschao, sizeof(verticeschao), sizeof(indiceschao));
+	meshList.push_back(obj4);
+
 }
 
 void CreateShader() {
@@ -124,6 +144,21 @@ int main() {
 		glUniformMatrix4fv(shaderList[0].getUniformModel(), 1, GL_FALSE, glm::value_ptr(model));
 		dirtTexture.useTexture();
 		meshList[1]->RenderMesh();
+		/********************************
+		* Piramide 3
+		*********************************/
+		model = glm::mat4(1.0f); //cria uma matriz 4x4 colocando 1.0f em cada uma das posições
+		model = glm::translate(model, glm::vec3(0.0f, -0.65f, -2.5f)); //traduz o modelo para movimentar a posição (x,y,z)
+		//model = glm::scale(model, glm::vec3(1.0f, 0.0f, 1.0f));
+		model = glm::rotate(model, glm::radians(90.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+		glUniformMatrix4fv(shaderList[0].getUniformModel(), 1, GL_FALSE, glm::value_ptr(model));
+		dirtTexture.useTexture();
+		meshList[2]->RenderMesh();
+	
+
+
+
+
 
 		glUseProgram(0); //Removo o Programa da memória
 
