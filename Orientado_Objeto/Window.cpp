@@ -101,11 +101,10 @@ void Window::handleKeys(GLFWwindow* window, int key, int code, int action, int m
 
 	//Garatnir que somente as teclas até 1024 foram apertadas
 	if (key >= 0 && key <= 1024) {
-		if (action == GLFW_PRESS) {
+		if (action == GLFW_PRESS){
 			theWindow->keys[key] = true;
 			//printf("Pressed: %d\n", key);
-		}
-		else if (action == GLFW_RELEASE) {
+		}else if(action == GLFW_RELEASE){
 			theWindow->keys[key] = false;
 			//printf("Released: %d\n", key);
 		}

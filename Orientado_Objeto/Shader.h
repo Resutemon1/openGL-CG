@@ -18,9 +18,11 @@ public:
 	GLuint getUniformProjection() { return uniformProjection; };
 	GLuint getUniformModel() { return uniformModel; };
 	GLuint getUniformView() { return uniformView; };
+	GLuint getUniformAmbientIntensity() { return uniformAmbientIntensity; };
+	GLuint getUniformAmbientColor() { return uniformAmbientColor; };
 
 private:
-	GLuint shaderID, uniformProjection, uniformModel, uniformView;
+	GLuint shaderID, uniformProjection, uniformModel, uniformView, uniformAmbientIntensity, uniformAmbientColor;
 	void CompileShader(const char* vertexCode, const char* fragmentCode);
 	void AddShader(GLenum shaderType, const char* shaderCode);
 	std::string ReadFile(const char* fileLocation);
